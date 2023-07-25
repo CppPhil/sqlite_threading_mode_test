@@ -1,57 +1,29 @@
-Push-Location .
+function Build($build_dir, $enable_mutex, $build_type) {
+  if (-Not (Test-Path -Path $build_dir)) {
+      mkdir $build_dir
+  }
 
-$build_dir = 'build'
+  Push-Location $build_dir
+  $cpuCores = Get-CimInstance Win32_Processor | Measure-Object -Property NumberOfCores -Sum | Select-Object -ExpandProperty Sum
+  cmake -DCMAKE_BUILD_TYPE=$build_type -DENABLE_MUTEX:BOOL=$enable_mutex ..
+  cmake --build . --config $build_type --parallel $cpuCores
 
-if (-Not (Test-Path -Path $build_dir)) {
-  mkdir $build_dir
-}
+  if (-Not ($LASTEXITCODE -eq "0")) {
+      Pop-Location
+      exit 1
+  }
 
-Push-Location $build_dir
-
-Write-Output ""
-Write-Output ""
-$time_string = Get-Date -Format "HH:mm:ss" | Out-String
-Write-Output "~~~~~~~~~~~~ Starting debug build ~~~~~~~~~~~~ $time_string"
-Write-Output ""
-
-cmake -DCMAKE_BUILD_TYPE=Debug ..
-cmake --build . --config Debug
-
-if (-Not ($LASTEXITCODE -eq "0")) {
-  Write-Output "cmake --build for Debug mode failed!"
   Pop-Location
-  exit 1
 }
 
-Write-Output ""
-$time_string = Get-Date -Format "HH:mm:ss" | Out-String
-Write-Output "~~~~~~~~~~~~ Completed debug build ~~~~~~~~~~~~ $time_string"
-Write-Output ""
-Write-Output ""
-
-Pop-Location
-Push-Location $build_dir
-
-Write-Output ""
-Write-Output ""
-$time_string = Get-Date -Format "HH:mm:ss" | Out-String
-Write-Output "~~~~~~~~~~~~ Starting release build ~~~~~~~~~~~~ $time_string"
-Write-Output ""
-
-cmake -DCMAKE_BUILD_TYPE=Release ..
-cmake --build . --config Release
-
-if (-Not ($LASTEXITCODE -eq "0")) {
-  Write-Output "cmake --build for Release mode failed!"
-  Pop-Location
-  exit 1
-}
-
-Write-Output ""
-$time_string = Get-Date -Format "HH:mm:ss" | Out-String
-Write-Output "~~~~~~~~~~~~ Completed release build ~~~~~~~~~~~~ $time_string"
-Write-Output ""
-Write-Output ""
-
+$scriptDirectory = $PSScriptRoot
+Push-Location $scriptDirectory
+$build_dir_multi_threaded = 'build_multi_threaded'
+$build_dir_mutex = 'build_mutex'
+Build $build_dir_multi_threaded $false "Debug"
+Build $build_dir_multi_threaded $false "Release"
+Build $build_dir_mutex $true "Debug"
+Build $build_dir_mutex $true "Release"
 Pop-Location
 exit 0
+

@@ -1,0 +1,9 @@
+[submodule "external/fmtlib"]
+	path = external/fmtlib
+	url = git@github.com:fmtlib/fmt.git
+[submodule "external/philslib"]
+	path = external/philslib
+	url = git@github.com:CppPhil/philslib.git
+[submodule "external/GSL"]
+	path = external/GSL
+	url = git@github.com:microsoft/GSL.git
